@@ -6,10 +6,11 @@ import { setSessionExpiredHandler } from '../api/client';
 
 const AuthContext = createContext(null);
 
-// status: 'loading' (checking a stored token) | 'authenticated' | 'unauthenticated' | 'error'
+// status: 'loading' (restoring the session) | 'authenticated' | 'unauthenticated' | 'error'
 export function AuthProvider({ children }) {
   const queryClient = useQueryClient();
-  const [status, setStatus] = useState(session.token ? 'loading' : 'unauthenticated');
+  // The access token is only in memory, so on every page load we try to restore the session first
+  const [status, setStatus] = useState('loading');
   const [user, setUser] = useState(null);
   const [business, setBusiness] = useState(null);
   const [sessionExpired, setSessionExpired] = useState(false);
@@ -22,17 +23,18 @@ export function AuthProvider({ children }) {
     setStatus('unauthenticated');
   }, [queryClient]);
 
+  // Restore after a reload or a reopened tab: the refresh-token cookie gives us a new access token.
+  // With a token already in memory (the "Try again" button) just load the profile.
   const restore = useCallback(async () => {
-    if (!session.token) return setStatus('unauthenticated');
     setStatus('loading');
     try {
-      const data = await authApi.getMe();
+      const data = session.token ? await authApi.getMe() : await authApi.refresh();
       setUser(data.user);
       setBusiness(data.business);
       setStatus('authenticated');
     } catch (err) {
-      // A 401 is handled by the API client's expiry callback. Anything else (offline, 5xx) is retryable.
-      if (err.status !== 401) setStatus('error');
+      // 401 means nobody is signed in (no cookie, or it expired). Anything else (offline, 5xx) can be retried.
+      setStatus(err.status === 401 ? 'unauthenticated' : 'error');
     }
   }, []);
 
@@ -46,7 +48,7 @@ export function AuthProvider({ children }) {
   useEffect(() => { restore(); }, [restore]);
 
   const applyAuthResponse = useCallback((data) => {
-    session.write({ token: data.token, refreshToken: data.refreshToken || null });
+    session.setToken(data.token);
     setUser(data.user);
     setBusiness(data.business);
     setSessionExpired(false);
@@ -63,6 +65,8 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(() => {
     setSessionExpired(false);
+    // Tell the server so the refresh token stops working. Do not make the user wait for it.
+    authApi.logout().catch(() => {});
     endSession();
   }, [endSession]);
 
