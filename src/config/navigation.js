@@ -4,8 +4,8 @@ import { LayoutDashboard, ShoppingCart, Boxes, ArrowLeftRight, Receipt, MessageS
 // accountants are read-only, so they don't see Sell or Expenses. Settings (WhatsApp, staff, billing) is owner-only.
 export const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, built: true, end: true },
-  { to: '/sell', label: 'Sell', icon: ShoppingCart, built: false, roles: ['owner', 'staff'] },
-  { to: '/inventory', label: 'Stock', icon: Boxes, built: false },
+  { to: '/sell', label: 'Sell', icon: ShoppingCart, built: true, roles: ['owner', 'staff'] },
+  { to: '/inventory', label: 'Stock', icon: Boxes, built: true },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight, built: false },
   { to: '/expenses', label: 'Expenses', icon: Receipt, built: false, roles: ['owner', 'staff'] },
   { to: '/messages', label: 'Messages', icon: MessageSquare, built: false },

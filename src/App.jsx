@@ -6,11 +6,11 @@ import AppLayout from './layouts/AppLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import SellPage from './pages/SellPage';
+import InventoryPage from './pages/InventoryPage';
 import MorePage from './pages/MorePage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
-// Next milestone: replace the <ComingSoonPage /> element for /sell and /inventory with real pages.
-// Nothing else in the shell needs to change.
 export default function App() {
   return (
     <Routes>
@@ -25,8 +25,8 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="/more" element={<MorePage />} />
-          <Route path="/sell" element={<ComingSoonPage />} />
-          <Route path="/inventory" element={<ComingSoonPage />} />
+          <Route path="/sell" element={<SellPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
           <Route path="/transactions" element={<ComingSoonPage />} />
           <Route path="/expenses" element={<ComingSoonPage />} />
           <Route path="/messages" element={<ComingSoonPage />} />

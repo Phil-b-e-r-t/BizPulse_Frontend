@@ -16,6 +16,11 @@ export function formatNumber(n, max = 2) {
   return new Intl.NumberFormat('en-UG', { maximumFractionDigits: max }).format(Number(n) || 0);
 }
 
+export function formatUnit(quantity, unit = '') {
+  if (!unit || Math.abs(Number(quantity)) === 1 || /^(kg|g|l|ml)$/i.test(unit) || unit.endsWith('s')) return unit;
+  return `${unit}s`;
+}
+
 export function formatDateTime(iso, timeZone) {
   if (!iso) return '';
   return new Intl.DateTimeFormat('en-UG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone }).format(new Date(iso));
