@@ -1,21 +1,18 @@
-// Tokens live in sessionStorage (cleared when the tab closes), never in source code.
-// User and business objects are NOT persisted; they are re-fetched from GET /auth/me.
-const KEY = 'bizpulse.session';
+// The access token lives in memory only: it is gone on reload and when the tab closes.
+// The long-lived refresh token is kept by the browser in an httpOnly cookie that JavaScript cannot read,
+// so a reload restores the session by calling POST /auth/refresh (see AuthContext).
+// User and business objects are NOT persisted; they come from the auth responses and GET /auth/me.
+let accessToken = null;
 
-function safe(fn, fallback = null) {
-  try { return fn(); } catch { return fallback; }
-}
+// Older versions stored tokens in sessionStorage. Remove anything left over.
+try { sessionStorage.removeItem('bizpulse.session'); } catch { /* storage unavailable */ }
 
 export const session = {
-  read() {
-    return safe(() => JSON.parse(sessionStorage.getItem(KEY)) || null);
-  },
-  write(data) {
-    safe(() => sessionStorage.setItem(KEY, JSON.stringify(data)));
-  },
-  clear() {
-    safe(() => sessionStorage.removeItem(KEY));
-  },
-  get token() { return this.read()?.token || null; },
-  get refreshToken() { return this.read()?.refreshToken || null; },
+  read() { return accessToken ? { token: accessToken } : null; },
+  write(data) { accessToken = data?.token || null; },
+  setToken(token) { accessToken = token || null; },
+  clear() { accessToken = null; },
+  get token() { return accessToken; },
+  // Kept so older code keeps working. The refresh token is never visible to JavaScript.
+  get refreshToken() { return null; },
 };

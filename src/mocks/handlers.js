@@ -7,7 +7,17 @@ import { DEMO_LOGIN, demoBusiness, demoUser, products, sampleSummary, sampleTran
 const base = env.apiUrl;
 const err = (status, code, message, details = []) => HttpResponse.json({ error: { code, message, details } }, { status });
 
-let current = { user: demoUser, business: demoBusiness, empty: false };
+// Stands in for the httpOnly refresh cookie: who is "logged in" survives a reload (until sign out or the tab closes).
+const MOCK_KEY = 'bizpulse.mock.session';
+const loadSaved = () => { try { return JSON.parse(sessionStorage.getItem(MOCK_KEY)); } catch { return null; } };
+const save = (value) => {
+  try {
+    if (value) sessionStorage.setItem(MOCK_KEY, JSON.stringify(value));
+    else sessionStorage.removeItem(MOCK_KEY);
+  } catch { /* storage unavailable */ }
+};
+
+let current = loadSaved() ?? { user: demoUser, business: demoBusiness, empty: false };
 const tokenFor = (u) => `mock.${u.id}`;
 
 const authed = (request) => request.headers.get('Authorization') === `Bearer ${tokenFor(current.user)}`;
@@ -18,6 +28,7 @@ export const handlers = [
     const { email, password } = await request.json();
     if (email === DEMO_LOGIN.email && password === DEMO_LOGIN.password) {
       current = { user: demoUser, business: demoBusiness, empty: false };
+      save(current);
       return HttpResponse.json({ token: tokenFor(demoUser), user: demoUser, business: demoBusiness });
     }
     return err(401, 'INVALID_CREDENTIALS', 'Wrong email or password');
@@ -30,7 +41,26 @@ export const handlers = [
     const business = { id: 'biz_new', name: b.businessName, phone: b.phone || null, currency: 'UGX', timezone: 'Africa/Kampala', plan: 'free' };
     const user = { id: 'usr_new', name: b.ownerName, email: b.email, role: 'owner', businessId: 'biz_new', emailVerified: false };
     current = { user, business, empty: true };
+    save(current);
     return HttpResponse.json({ token: tokenFor(user), user, business }, { status: 201 });
+  }),
+
+  // Silent refresh: succeeds while the "cookie" (saved session) exists
+  http.post(`${base}/auth/refresh`, () => {
+    const saved = loadSaved();
+    if (!saved) return err(401, 'INVALID_REFRESH_TOKEN', 'Session expired, please log in again');
+    current = saved;
+    return HttpResponse.json({ token: tokenFor(current.user), user: current.user, business: current.business });
+  }),
+
+  http.post(`${base}/auth/logout`, () => {
+    save(null);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post(`${base}/auth/logout-all`, () => {
+    save(null);
+    return new HttpResponse(null, { status: 204 });
   }),
 
   http.get(`${base}/auth/me`, guard(() => HttpResponse.json({ user: current.user, business: current.business }))),
