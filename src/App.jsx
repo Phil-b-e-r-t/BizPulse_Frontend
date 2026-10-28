@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import MorePage from './pages/MorePage';
+import Sell from './pages/Sell';
 import ComingSoonPage from './pages/ComingSoonPage';
 
 // Next milestone: replace the <ComingSoonPage /> element for /sell and /inventory with real pages.
@@ -25,7 +26,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="/more" element={<MorePage />} />
-          <Route path="/sell" element={<ComingSoonPage />} />
+          <Route path="/sell" element={<Sell />} />
           <Route path="/inventory" element={<ComingSoonPage />} />
           <Route path="/transactions" element={<ComingSoonPage />} />
           <Route path="/expenses" element={<ComingSoonPage />} />
