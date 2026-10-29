@@ -76,6 +76,21 @@ export const handlers = [
     return HttpResponse.json({ items: all.slice(0, limit), pagination: { page: 1, limit, total: all.length, totalPages: 1 } });
   })),
 
+  http.post(`${base}/transactions`, guard(async ({ request }) => {
+    const transaction = await request.json();
+    if (transaction.type !== 'expense' || !Number.isFinite(transaction.amount)) {
+      return err(422, 'VALIDATION_ERROR', 'Enter a valid expense amount');
+    }
+    return HttpResponse.json({
+      id: `expense_${Date.now()}`,
+      ...transaction,
+      channel: 'pos',
+      status: 'confirmed',
+      occurredAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    }, { status: 201 });
+  })),
+
   http.get(`${base}/products`, guard(({ request }) => {
     const q = new URL(request.url).searchParams;
     let items = current.empty ? [] : products;
