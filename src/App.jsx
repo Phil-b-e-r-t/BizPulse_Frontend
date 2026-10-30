@@ -8,6 +8,8 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import SellPage from './pages/SellPage';
 import InventoryPage from './pages/InventoryPage';
+import Billing from './pages/Billing';
+import BillingComplete from './pages/BillingComplete';
 import MorePage from './pages/MorePage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
@@ -27,6 +29,8 @@ export default function App() {
           <Route path="/more" element={<MorePage />} />
           <Route path="/sell" element={<SellPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
+          <Route path="/settings/billing" element={<Billing />} />
+          <Route path="/billing/complete" element={<BillingComplete />} />
           <Route path="/transactions" element={<ComingSoonPage />} />
           <Route path="/expenses" element={<ComingSoonPage />} />
           <Route path="/messages" element={<ComingSoonPage />} />
