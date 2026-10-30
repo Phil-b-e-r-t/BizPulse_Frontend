@@ -5,6 +5,7 @@ import AuthLayout from './layouts/AuthLayout';
 import AppLayout from './layouts/AppLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import AcceptInvite from './pages/AcceptInvite';
 import DashboardPage from './pages/DashboardPage';
 import SellPage from './pages/SellPage';
 import InventoryPage from './pages/InventoryPage';
@@ -14,6 +15,10 @@ import ComingSoonPage from './pages/ComingSoonPage';
 export default function App() {
   return (
     <Routes>
+      <Route element={<AuthLayout />}>
+        <Route path="/accept-invite" element={<AcceptInvite />} />
+      </Route>
+
       <Route element={<PublicOnlyRoute />}>
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
@@ -24,6 +29,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/more" element={<MorePage />} />
           <Route path="/sell" element={<SellPage />} />
           <Route path="/inventory" element={<InventoryPage />} />

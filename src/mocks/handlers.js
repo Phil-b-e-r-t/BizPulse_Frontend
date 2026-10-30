@@ -9,6 +9,7 @@ const err = (status, code, message, details = []) => HttpResponse.json({ error: 
 
 // Stands in for the httpOnly refresh cookie: who is "logged in" survives a reload (until sign out or the tab closes).
 const MOCK_KEY = 'bizpulse.mock.session';
+const MOCK_INVITE_TOKEN = 'demo-invite-token';
 const loadSaved = () => { try { return JSON.parse(sessionStorage.getItem(MOCK_KEY)); } catch { return null; } };
 const save = (value) => {
   try {
@@ -64,6 +65,29 @@ export const handlers = [
   }),
 
   http.get(`${base}/auth/me`, guard(() => HttpResponse.json({ user: current.user, business: current.business }))),
+
+  http.get(`${base}/invites/token`, ({ request }) => {
+    const token = new URL(request.url).searchParams.get('token');
+    if (token !== MOCK_INVITE_TOKEN) return err(400, 'INVITE_INVALID', 'Invitation is invalid');
+    return HttpResponse.json({ email: 'newstaff@bizpulse.test', role: 'staff', businessName: demoBusiness.name });
+  }),
+
+  http.post(`${base}/invites/accept`, async ({ request }) => {
+    const payload = await request.json();
+    if (payload.token !== MOCK_INVITE_TOKEN) return err(400, 'INVITE_INVALID', 'Invitation is invalid');
+    if (payload.email === DEMO_LOGIN.email) return err(409, 'EMAIL_TAKEN', 'An account already exists with this email');
+    const user = {
+      id: 'usr_invited',
+      name: payload.name || 'New team member',
+      email: 'newstaff@bizpulse.test',
+      role: 'staff',
+      businessId: demoBusiness.id,
+      emailVerified: false,
+    };
+    current = { user, business: demoBusiness, empty: false };
+    save(current);
+    return HttpResponse.json({ token: tokenFor(user), user, business: demoBusiness });
+  }),
 
   http.get(`${base}/dashboard/summary`, guard(({ request }) => {
     const range = new URL(request.url).searchParams.get('range') || 'week';
