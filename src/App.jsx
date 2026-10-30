@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import SellPage from './pages/SellPage';
 import InventoryPage from './pages/InventoryPage';
+import TeamSettings from './pages/TeamSettings';
 import MorePage from './pages/MorePage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
@@ -30,7 +31,7 @@ export default function App() {
           <Route path="/transactions" element={<ComingSoonPage />} />
           <Route path="/expenses" element={<ComingSoonPage />} />
           <Route path="/messages" element={<ComingSoonPage />} />
-          <Route path="/settings" element={<ComingSoonPage />} />
+          <Route path="/settings" element={<TeamSettings />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Route>
       </Route>
