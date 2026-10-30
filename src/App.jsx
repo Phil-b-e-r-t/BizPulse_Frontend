@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import SellPage from './pages/SellPage';
 import InventoryPage from './pages/InventoryPage';
+import TransactionsPage from './pages/Transactions';
 import MorePage from './pages/MorePage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
@@ -27,7 +28,7 @@ export default function App() {
           <Route path="/more" element={<MorePage />} />
           <Route path="/sell" element={<SellPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
-          <Route path="/transactions" element={<ComingSoonPage />} />
+          <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/expenses" element={<ComingSoonPage />} />
           <Route path="/messages" element={<ComingSoonPage />} />
           <Route path="/settings" element={<ComingSoonPage />} />
