@@ -2,9 +2,9 @@ import { Outlet } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import Logo from '../components/Logo';
 
-// Background slideshow: place four photos at public/brand/auth-bg-1.jpg ... auth-bg-4.jpg.
+// Background slideshow: place four images at public/brand/auth-bg-1.png ... auth-bg-4.png.
 // Any missing file is hidden automatically.
-const BACKGROUNDS = [1, 2, 3, 4].map((n) => `/brand/auth-bg-${n}.jpg`);
+const BACKGROUNDS = [1, 2, 3, 4].map((n) => `/brand/auth-bg-${n}.png`);
 const SLIDE_SECONDS = 6;
 
 export default function AuthLayout() {
