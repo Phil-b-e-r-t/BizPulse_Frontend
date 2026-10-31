@@ -14,9 +14,13 @@ export default function RegisterPage() {
   const { register: registerAccount } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
-  const { register, handleSubmit, setError, clearErrors, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setError, clearErrors, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: { businessName: '', ownerName: '', email: '', phone: '', password: '' },
   });
+
+  // The button stays faint and disabled until every required field has a value (phone is optional).
+  const [businessName, ownerName, email, password] = watch(['businessName', 'ownerName', 'email', 'password']);
+  const canSubmit = Boolean(businessName.trim() && ownerName.trim() && email.trim() && password);
 
   useEffect(() => { document.title = 'Create account · BizPulse'; }, []);
 
@@ -48,6 +52,7 @@ export default function RegisterPage() {
 
         <Field
           label="Business name"
+          required
           autoComplete="organization"
           placeholder="Ama Provisions"
           error={errors.businessName?.message}
@@ -55,12 +60,14 @@ export default function RegisterPage() {
         />
         <Field
           label="Your name"
+          required
           autoComplete="name"
           error={errors.ownerName?.message}
           {...register('ownerName', { required: 'Enter your name' })}
         />
         <Field
           label="Email"
+          required
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -82,6 +89,7 @@ export default function RegisterPage() {
         />
         <Field
           label="Password"
+          required
           type="password"
           autoComplete="new-password"
           hint="8 to 72 characters"
@@ -92,7 +100,13 @@ export default function RegisterPage() {
             maxLength: { value: 72, message: 'Use 72 characters or fewer' },
           })}
         />
-        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full disabled:opacity-60"
+          loading={isSubmitting}
+          disabled={!canSubmit}
+        >
           {isSubmitting ? 'Creating account' : 'Create account'}
         </Button>
       </form>

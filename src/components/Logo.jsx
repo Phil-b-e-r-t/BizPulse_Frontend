@@ -14,11 +14,17 @@ export function LogoMark({ className = 'h-8 w-8' }) {
   );
 }
 
-export default function Logo({ tone = 'dark', className = '' }) {
+const SIZES = {
+  md: { mark: 'h-8 w-8', text: 'text-lg font-bold' },
+  lg: { mark: 'h-12 w-12', text: 'text-4xl font-extrabold' },
+};
+
+export default function Logo({ tone = 'dark', size = 'md', className = '' }) {
+  const s = SIZES[size] || SIZES.md;
   return (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
-      <LogoMark />
-      <span className={`text-lg font-bold tracking-tight ${tone === 'light' ? 'text-white' : 'text-ink'}`}>BizPulse</span>
+      <LogoMark className={s.mark} />
+      <span className={`${s.text} tracking-tight ${tone === 'light' ? 'text-white' : 'text-ink'}`}>BizPulse</span>
     </span>
   );
 }

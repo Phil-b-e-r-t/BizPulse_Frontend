@@ -73,9 +73,9 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     status, user, business, sessionExpired,
     isOwner: user?.role === 'owner',
-    login, register, logout, retry: restore,
+    login, register, applyAuthResponse, logout, retry: restore,
     clearExpiredNotice: () => setSessionExpired(false),
-  }), [status, user, business, sessionExpired, login, register, logout, restore]);
+  }), [status, user, business, sessionExpired, login, register, applyAuthResponse, logout, restore]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
