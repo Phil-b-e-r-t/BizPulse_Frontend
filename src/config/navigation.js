@@ -7,7 +7,7 @@ export const NAV_ITEMS = [
   { to: '/sell', label: 'Sell', icon: ShoppingCart, built: true, roles: ['owner', 'staff'] },
   { to: '/inventory', label: 'Stock', icon: Boxes, built: true },
   { to: '/transactions', label: 'Transactions', icon: ArrowLeftRight, built: false },
-  { to: '/expenses', label: 'Expenses', icon: Receipt, built: false, roles: ['owner', 'staff'] },
+  { to: '/expenses', label: 'Expenses', icon: Receipt, built: true, roles: ['owner', 'staff'] },
   { to: '/messages', label: 'Messages', icon: MessageSquare, built: false },
   { to: '/settings', label: 'Settings', icon: Settings, built: true, roles: ['owner'] },
 ];

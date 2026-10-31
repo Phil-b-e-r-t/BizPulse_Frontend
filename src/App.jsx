@@ -9,6 +9,7 @@ import AcceptInvite from './pages/AcceptInvite';
 import DashboardPage from './pages/DashboardPage';
 import SellPage from './pages/SellPage';
 import InventoryPage from './pages/InventoryPage';
+import ExpensesPage from './pages/Expenses';
 import WhatsAppSettingsPage from './pages/WhatsAppSettingsPage';
 import Billing from './pages/Billing';
 import BillingComplete from './pages/BillingComplete';
@@ -39,7 +40,7 @@ export default function App() {
           <Route path="/settings/billing" element={<Billing />} />
           <Route path="/billing/complete" element={<BillingComplete />} />
           <Route path="/transactions" element={<ComingSoonPage />} />
-          <Route path="/expenses" element={<ComingSoonPage />} />
+          <Route path="/expenses" element={<ExpensesPage />} />
           <Route path="/messages" element={<ComingSoonPage />} />
           <Route path="/settings" element={<WhatsAppSettingsPage />} />
           <Route path="*" element={<ComingSoonPage />} />
