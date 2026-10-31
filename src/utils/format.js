@@ -22,16 +22,17 @@ export function formatUnit(quantity, unit = '') {
 }
 
 export function formatPhoneNumber(phone) {
-  const raw = String(phone || '').trim();
-  const digits = raw.replace(/\D/g, '');
-  let local;
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
 
-  if (digits.startsWith('256') && digits.length === 12) local = digits.slice(3);
-  else if (digits.startsWith('0') && digits.length === 10) local = digits.slice(1);
-  else if (digits.length === 9) local = digits;
-  else return raw;
+  let localNumber;
+  if (digits.startsWith('256')) localNumber = digits.slice(3);
+  else if (digits.startsWith('0') && digits.length === 10) localNumber = digits.slice(1);
+  else if (digits.length === 9) localNumber = digits;
+  else return String(phone).trim();
 
-  return `+256 ${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
+  const groups = localNumber.match(/.{1,3}/g) || [];
+  return `+256 ${groups.join(' ')}`;
 }
 
 export function formatDateTime(iso, timeZone) {
