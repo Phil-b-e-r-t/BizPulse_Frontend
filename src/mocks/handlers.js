@@ -18,6 +18,8 @@ const save = (value) => {
 };
 
 let current = loadSaved() ?? { user: demoUser, business: demoBusiness, empty: false };
+let mockSubscription = { plan: 'free', status: 'active', renewalDate: null };
+let mockPaymentStartedAt = 0;
 const tokenFor = (u) => `mock.${u.id}`;
 
 const authed = (request) => request.headers.get('Authorization') === `Bearer ${tokenFor(current.user)}`;
@@ -82,6 +84,21 @@ export const handlers = [
     if (q.get('lowStock') === 'true') items = items.filter((p) => p.lowStock);
     const limit = Number(q.get('limit')) || 20;
     return HttpResponse.json({ items: items.slice(0, limit), pagination: { page: 1, limit, total: items.length, totalPages: 1 } });
+  })),
+
+  http.get(`${base}/payments/subscription`, guard(() => {
+    if (mockPaymentStartedAt && Date.now() - mockPaymentStartedAt >= 6000) {
+      mockSubscription = { ...mockSubscription, status: 'active', renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString() };
+      mockPaymentStartedAt = 0;
+    }
+    return HttpResponse.json(mockSubscription);
+  })),
+  http.post(`${base}/payments/initialize`, guard(async ({ request }) => {
+    const { plan } = await request.json();
+    if (!['growth', 'pro'].includes(plan)) return err(422, 'VALIDATION_ERROR', 'Choose a valid plan');
+    mockSubscription = { plan, status: 'pending', renewalDate: null };
+    mockPaymentStartedAt = Date.now();
+    return HttpResponse.json({ paymentLink: `${globalThis.location.origin}/billing/complete` });
   })),
 
   http.get(`${base}/whatsapp/status`, guard(() => HttpResponse.json({ connected: false, account: null }))),
