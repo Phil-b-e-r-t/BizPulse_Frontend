@@ -23,16 +23,32 @@ let whatsappConnection = null;
 let mockSenders = [];
 let mockSubscription = { plan: 'free', status: 'active', renewalDate: null };
 let mockPaymentStartedAt = 0;
+const makeTeamMembers = (user) => [{
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  isActive: true,
+}];
+let teamMembers = makeTeamMembers(current.user);
+let teamInvites = [{ id: 'invite_demo', email: 'maria@bizpulse.test', role: 'accountant' }];
 const tokenFor = (u) => `mock.${u.id}`;
 
 const authed = (request) => request.headers.get('Authorization') === `Bearer ${tokenFor(current.user)}`;
 const guard = (fn) => (ctx) => (authed(ctx.request) ? fn(ctx) : err(401, 'INVALID_TOKEN', 'Invalid or expired token'));
+const ownerGuard = (fn) => (ctx) => {
+  if (!authed(ctx.request)) return err(401, 'INVALID_TOKEN', 'Invalid or expired token');
+  if (current.user.role !== 'owner') return err(403, 'FORBIDDEN', 'Only the owner can do this');
+  return fn(ctx);
+};
 
 export const handlers = [
   http.post(`${base}/auth/login`, async ({ request }) => {
     const { email, password } = await request.json();
     if (email === DEMO_LOGIN.email && password === DEMO_LOGIN.password) {
       current = { user: demoUser, business: demoBusiness, empty: false };
+      teamMembers = makeTeamMembers(demoUser);
+      teamInvites = [{ id: 'invite_demo', email: 'maria@bizpulse.test', role: 'accountant' }];
       save(current);
       return HttpResponse.json({ token: tokenFor(demoUser), user: demoUser, business: demoBusiness });
     }
@@ -46,6 +62,8 @@ export const handlers = [
     const business = { id: 'biz_new', name: b.businessName, phone: b.phone || null, currency: 'UGX', timezone: 'Africa/Kampala', plan: 'free' };
     const user = { id: 'usr_new', name: b.ownerName, email: b.email, role: 'owner', businessId: 'biz_new', emailVerified: false };
     current = { user, business, empty: true };
+    teamMembers = makeTeamMembers(user);
+    teamInvites = [];
     save(current);
     return HttpResponse.json({ token: tokenFor(user), user, business }, { status: 201 });
   }),
@@ -125,6 +143,31 @@ export const handlers = [
     if (q.get('lowStock') === 'true') items = items.filter((p) => p.lowStock);
     const limit = Number(q.get('limit')) || 20;
     return HttpResponse.json({ items: items.slice(0, limit), pagination: { page: 1, limit, total: items.length, totalPages: 1 } });
+  })),
+
+  http.get(`${base}/team/members`, ownerGuard(() => HttpResponse.json({ items: teamMembers }))),
+  http.patch(`${base}/team/members/:id`, ownerGuard(async ({ params, request }) => {
+    const changes = await request.json();
+    const index = teamMembers.findIndex((member) => member.id === params.id);
+    if (index < 0) return err(404, 'NOT_FOUND', 'Team member not found');
+    teamMembers = teamMembers.map((member, i) => i === index ? { ...member, ...changes } : member);
+    return HttpResponse.json(teamMembers[index]);
+  })),
+  http.get(`${base}/team/invites`, ownerGuard(() => HttpResponse.json({ items: teamInvites }))),
+  http.post(`${base}/team/invites`, ownerGuard(async ({ request }) => {
+    const payload = await request.json();
+    const invite = { id: `invite_${Date.now()}`, email: payload.email, name: payload.name, role: payload.role, phone: payload.phone || null };
+    teamInvites = [...teamInvites, invite];
+    return HttpResponse.json({ ...invite, inviteUrl: `https://bizpulse.test/invite/${invite.id}` }, { status: 201 });
+  })),
+  http.post(`${base}/team/invites/:id/resend`, ownerGuard(({ params }) => (
+    teamInvites.some((invite) => invite.id === params.id)
+      ? new HttpResponse(null, { status: 204 })
+      : err(404, 'NOT_FOUND', 'Invitation not found')
+  ))),
+  http.delete(`${base}/team/invites/:id`, ownerGuard(({ params }) => {
+    teamInvites = teamInvites.filter((invite) => invite.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
   })),
 
   http.get(`${base}/whatsapp/status`, guard(() => HttpResponse.json({ connected: Boolean(whatsappConnection), account: whatsappConnection }))),
