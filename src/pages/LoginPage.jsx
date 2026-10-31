@@ -13,9 +13,13 @@ export default function LoginPage() {
   const { login, sessionExpired, clearExpiredNotice } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { register, handleSubmit, setError, clearErrors, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setError, clearErrors, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: { email: '', password: '' },
   });
+
+  // The button stays faint and disabled until every required field has a value.
+  const [email, password] = watch(['email', 'password']);
+  const canSubmit = Boolean(email.trim() && password);
 
   useEffect(() => { document.title = 'Log in · BizPulse'; }, []);
 
@@ -59,7 +63,13 @@ export default function LoginPage() {
           error={errors.password?.message}
           {...register('password', { required: 'Enter your password' })}
         />
-        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full disabled:opacity-60"
+          loading={isSubmitting}
+          disabled={!canSubmit}
+        >
           {isSubmitting ? 'Logging in' : 'Log in'}
         </Button>
       </form>

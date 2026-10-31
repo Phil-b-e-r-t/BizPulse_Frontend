@@ -14,9 +14,13 @@ export default function RegisterPage() {
   const { register: registerAccount } = useAuth();
   const { push } = useToast();
   const navigate = useNavigate();
-  const { register, handleSubmit, setError, clearErrors, formState: { errors, isSubmitting } } = useForm({
+  const { register, handleSubmit, setError, clearErrors, watch, formState: { errors, isSubmitting } } = useForm({
     defaultValues: { businessName: '', ownerName: '', email: '', phone: '', password: '' },
   });
+
+  // The button stays faint and disabled until every required field has a value (phone is optional).
+  const [businessName, ownerName, email, password] = watch(['businessName', 'ownerName', 'email', 'password']);
+  const canSubmit = Boolean(businessName.trim() && ownerName.trim() && email.trim() && password);
 
   useEffect(() => { document.title = 'Create account · BizPulse'; }, []);
 
@@ -96,7 +100,13 @@ export default function RegisterPage() {
             maxLength: { value: 72, message: 'Use 72 characters or fewer' },
           })}
         />
-        <Button type="submit" size="lg" className="w-full" loading={isSubmitting}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full disabled:opacity-60"
+          loading={isSubmitting}
+          disabled={!canSubmit}
+        >
           {isSubmitting ? 'Creating account' : 'Create account'}
         </Button>
       </form>
