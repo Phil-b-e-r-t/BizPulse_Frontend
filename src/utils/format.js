@@ -21,6 +21,20 @@ export function formatUnit(quantity, unit = '') {
   return `${unit}s`;
 }
 
+export function formatPhoneNumber(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+
+  let localNumber;
+  if (digits.startsWith('256')) localNumber = digits.slice(3);
+  else if (digits.startsWith('0') && digits.length === 10) localNumber = digits.slice(1);
+  else if (digits.length === 9) localNumber = digits;
+  else return String(phone).trim();
+
+  const groups = localNumber.match(/.{1,3}/g) || [];
+  return `+256 ${groups.join(' ')}`;
+}
+
 export function formatDateTime(iso, timeZone) {
   if (!iso) return '';
   return new Intl.DateTimeFormat('en-UG', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone }).format(new Date(iso));
