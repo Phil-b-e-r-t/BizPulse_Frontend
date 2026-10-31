@@ -9,6 +9,7 @@ const err = (status, code, message, details = []) => HttpResponse.json({ error: 
 
 // Stands in for the httpOnly refresh cookie: who is "logged in" survives a reload (until sign out or the tab closes).
 const MOCK_KEY = 'bizpulse.mock.session';
+const MOCK_INVITE_TOKEN = 'demo-invite-token';
 const loadSaved = () => { try { return JSON.parse(sessionStorage.getItem(MOCK_KEY)); } catch { return null; } };
 const save = (value) => {
   try {
@@ -18,7 +19,10 @@ const save = (value) => {
 };
 
 let current = loadSaved() ?? { user: demoUser, business: demoBusiness, empty: false };
-const voidedTransactions = new Set();
+let whatsappConnection = null;
+let mockSenders = [];
+let mockSubscription = { plan: 'free', status: 'active', renewalDate: null };
+let mockPaymentStartedAt = 0;
 const tokenFor = (u) => `mock.${u.id}`;
 
 const authed = (request) => request.headers.get('Authorization') === `Bearer ${tokenFor(current.user)}`;
@@ -66,28 +70,53 @@ export const handlers = [
 
   http.get(`${base}/auth/me`, guard(() => HttpResponse.json({ user: current.user, business: current.business }))),
 
+  http.get(`${base}/invites/token`, ({ request }) => {
+    const token = new URL(request.url).searchParams.get('token');
+    if (token !== MOCK_INVITE_TOKEN) return err(400, 'INVITE_INVALID', 'Invitation is invalid');
+    return HttpResponse.json({ email: 'newstaff@bizpulse.test', role: 'staff', businessName: demoBusiness.name });
+  }),
+
+  http.post(`${base}/invites/accept`, async ({ request }) => {
+    const payload = await request.json();
+    if (payload.token !== MOCK_INVITE_TOKEN) return err(400, 'INVITE_INVALID', 'Invitation is invalid');
+    if (payload.email === DEMO_LOGIN.email) return err(409, 'EMAIL_TAKEN', 'An account already exists with this email');
+    const user = {
+      id: 'usr_invited',
+      name: payload.name || 'New team member',
+      email: 'newstaff@bizpulse.test',
+      role: 'staff',
+      businessId: demoBusiness.id,
+      emailVerified: false,
+    };
+    current = { user, business: demoBusiness, empty: false };
+    save(current);
+    return HttpResponse.json({ token: tokenFor(user), user, business: demoBusiness });
+  }),
+
   http.get(`${base}/dashboard/summary`, guard(({ request }) => {
     const range = new URL(request.url).searchParams.get('range') || 'week';
     return HttpResponse.json(sampleSummary(range, current.empty));
   })),
 
   http.get(`${base}/transactions`, guard(({ request }) => {
-    const params = new URL(request.url).searchParams;
-    const page = Number(params.get('page')) || 1;
-    const limit = Number(params.get('limit')) || 20;
-    let items = sampleTransactions(current.empty).map((transaction) => (
-      voidedTransactions.has(transaction.id) ? { ...transaction, status: 'voided' } : transaction
-    ));
-    if (params.get('type')) items = items.filter((transaction) => transaction.type === params.get('type'));
-    if (params.get('channel')) items = items.filter((transaction) => transaction.channel === params.get('channel'));
-    const total = items.length;
-    const offset = (page - 1) * limit;
-    return HttpResponse.json({ items: items.slice(offset, offset + limit), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+    const limit = Number(new URL(request.url).searchParams.get('limit')) || 20;
+    const all = sampleTransactions(current.empty);
+    return HttpResponse.json({ items: all.slice(0, limit), pagination: { page: 1, limit, total: all.length, totalPages: 1 } });
   })),
 
-  http.post(`${base}/transactions/:id/void`, guard(({ params }) => {
-    voidedTransactions.add(params.id);
-    return new HttpResponse(null, { status: 204 });
+  http.post(`${base}/transactions`, guard(async ({ request }) => {
+    const transaction = await request.json();
+    if (transaction.type !== 'expense' || !Number.isFinite(transaction.amount)) {
+      return err(422, 'VALIDATION_ERROR', 'Enter a valid expense amount');
+    }
+    return HttpResponse.json({
+      id: `expense_${Date.now()}`,
+      ...transaction,
+      channel: 'pos',
+      status: 'confirmed',
+      occurredAt: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
+    }, { status: 201 });
   })),
 
   http.get(`${base}/products`, guard(({ request }) => {
@@ -96,6 +125,45 @@ export const handlers = [
     if (q.get('lowStock') === 'true') items = items.filter((p) => p.lowStock);
     const limit = Number(q.get('limit')) || 20;
     return HttpResponse.json({ items: items.slice(0, limit), pagination: { page: 1, limit, total: items.length, totalPages: 1 } });
+  })),
+
+  http.get(`${base}/whatsapp/status`, guard(() => HttpResponse.json({ connected: Boolean(whatsappConnection), account: whatsappConnection }))),
+  http.post(`${base}/whatsapp/connect`, guard(async ({ request }) => {
+    const { phoneNumberId, wabaId, displayPhoneNumber } = await request.json();
+    whatsappConnection = { phoneNumberId, wabaId: wabaId || null, displayPhoneNumber: displayPhoneNumber || null };
+    return HttpResponse.json({ connected: true, account: whatsappConnection });
+  })),
+  http.get(`${base}/whatsapp/senders`, guard(() => HttpResponse.json({ items: mockSenders }))),
+  http.post(`${base}/whatsapp/senders`, guard(async ({ request }) => {
+    const body = await request.json();
+    const sender = {
+      id: `sender_${Date.now()}_${mockSenders.length}`,
+      phone: body.phone,
+      role: body.role,
+      label: body.label || null,
+      userId: current.user.id,
+      createdAt: new Date().toISOString(),
+    };
+    mockSenders = [...mockSenders, sender];
+    return HttpResponse.json(sender, { status: 201 });
+  })),
+  http.delete(`${base}/whatsapp/senders/:id`, guard(({ params }) => {
+    mockSenders = mockSenders.filter((sender) => sender.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  })),
+  http.get(`${base}/payments/subscription`, guard(() => {
+    if (mockPaymentStartedAt && Date.now() - mockPaymentStartedAt >= 6000) {
+      mockSubscription = { ...mockSubscription, status: 'active', renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString() };
+      mockPaymentStartedAt = 0;
+    }
+    return HttpResponse.json(mockSubscription);
+  })),
+  http.post(`${base}/payments/initialize`, guard(async ({ request }) => {
+    const { plan } = await request.json();
+    if (!['growth', 'pro'].includes(plan)) return err(422, 'VALIDATION_ERROR', 'Choose a valid plan');
+    mockSubscription = { plan, status: 'pending', renewalDate: null };
+    mockPaymentStartedAt = Date.now();
+    return HttpResponse.json({ paymentLink: `${globalThis.location.origin}/billing/complete` });
   })),
 
   http.get(`${base}/whatsapp/status`, guard(() => HttpResponse.json({ connected: false, account: null }))),
