@@ -19,6 +19,7 @@ const save = (value) => {
 };
 
 let current = loadSaved() ?? { user: demoUser, business: demoBusiness, empty: false };
+const voidedTransactions = new Set();
 let whatsappConnection = null;
 let mockSenders = [];
 let mockSubscription = { plan: 'free', status: 'active', renewalDate: null };
@@ -99,9 +100,22 @@ export const handlers = [
   })),
 
   http.get(`${base}/transactions`, guard(({ request }) => {
-    const limit = Number(new URL(request.url).searchParams.get('limit')) || 20;
-    const all = sampleTransactions(current.empty);
-    return HttpResponse.json({ items: all.slice(0, limit), pagination: { page: 1, limit, total: all.length, totalPages: 1 } });
+    const params = new URL(request.url).searchParams;
+    const page = Number(params.get('page')) || 1;
+    const limit = Number(params.get('limit')) || 20;
+    let items = sampleTransactions(current.empty).map((transaction) => (
+      voidedTransactions.has(transaction.id) ? { ...transaction, status: 'voided' } : transaction
+    ));
+    if (params.get('type')) items = items.filter((transaction) => transaction.type === params.get('type'));
+    if (params.get('channel')) items = items.filter((transaction) => transaction.channel === params.get('channel'));
+    const total = items.length;
+    const offset = (page - 1) * limit;
+    return HttpResponse.json({ items: items.slice(offset, offset + limit), pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+  })),
+
+  http.post(`${base}/transactions/:id/void`, guard(({ params }) => {
+    voidedTransactions.add(params.id);
+    return new HttpResponse(null, { status: 204 });
   })),
 
   http.post(`${base}/transactions`, guard(async ({ request }) => {
