@@ -9,6 +9,7 @@ const err = (status, code, message, details = []) => HttpResponse.json({ error: 
 
 // Stands in for the httpOnly refresh cookie: who is "logged in" survives a reload (until sign out or the tab closes).
 const MOCK_KEY = 'bizpulse.mock.session';
+const MOCK_INVITE_TOKEN = 'demo-invite-token';
 const loadSaved = () => { try { return JSON.parse(sessionStorage.getItem(MOCK_KEY)); } catch { return null; } };
 const save = (value) => {
   try {
@@ -20,6 +21,8 @@ const save = (value) => {
 let current = loadSaved() ?? { user: demoUser, business: demoBusiness, empty: false };
 let whatsappConnection = null;
 let mockSenders = [];
+let mockSubscription = { plan: 'free', status: 'active', renewalDate: null };
+let mockPaymentStartedAt = 0;
 const tokenFor = (u) => `mock.${u.id}`;
 
 const authed = (request) => request.headers.get('Authorization') === `Bearer ${tokenFor(current.user)}`;
@@ -67,6 +70,29 @@ export const handlers = [
 
   http.get(`${base}/auth/me`, guard(() => HttpResponse.json({ user: current.user, business: current.business }))),
 
+  http.get(`${base}/invites/token`, ({ request }) => {
+    const token = new URL(request.url).searchParams.get('token');
+    if (token !== MOCK_INVITE_TOKEN) return err(400, 'INVITE_INVALID', 'Invitation is invalid');
+    return HttpResponse.json({ email: 'newstaff@bizpulse.test', role: 'staff', businessName: demoBusiness.name });
+  }),
+
+  http.post(`${base}/invites/accept`, async ({ request }) => {
+    const payload = await request.json();
+    if (payload.token !== MOCK_INVITE_TOKEN) return err(400, 'INVITE_INVALID', 'Invitation is invalid');
+    if (payload.email === DEMO_LOGIN.email) return err(409, 'EMAIL_TAKEN', 'An account already exists with this email');
+    const user = {
+      id: 'usr_invited',
+      name: payload.name || 'New team member',
+      email: 'newstaff@bizpulse.test',
+      role: 'staff',
+      businessId: demoBusiness.id,
+      emailVerified: false,
+    };
+    current = { user, business: demoBusiness, empty: false };
+    save(current);
+    return HttpResponse.json({ token: tokenFor(user), user, business: demoBusiness });
+  }),
+
   http.get(`${base}/dashboard/summary`, guard(({ request }) => {
     const range = new URL(request.url).searchParams.get('range') || 'week';
     return HttpResponse.json(sampleSummary(range, current.empty));
@@ -110,4 +136,21 @@ export const handlers = [
     mockSenders = mockSenders.filter((sender) => sender.id !== params.id);
     return new HttpResponse(null, { status: 204 });
   })),
+  http.get(`${base}/payments/subscription`, guard(() => {
+    if (mockPaymentStartedAt && Date.now() - mockPaymentStartedAt >= 6000) {
+      mockSubscription = { ...mockSubscription, status: 'active', renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString() };
+      mockPaymentStartedAt = 0;
+    }
+    return HttpResponse.json(mockSubscription);
+  })),
+  http.post(`${base}/payments/initialize`, guard(async ({ request }) => {
+    const { plan } = await request.json();
+    if (!['growth', 'pro'].includes(plan)) return err(422, 'VALIDATION_ERROR', 'Choose a valid plan');
+    mockSubscription = { plan, status: 'pending', renewalDate: null };
+    mockPaymentStartedAt = Date.now();
+    return HttpResponse.json({ paymentLink: `${globalThis.location.origin}/billing/complete` });
+  })),
+
+  http.get(`${base}/whatsapp/status`, guard(() => HttpResponse.json({ connected: false, account: null }))),
+  http.get(`${base}/whatsapp/senders`, guard(() => HttpResponse.json({ items: [] }))),
 ];

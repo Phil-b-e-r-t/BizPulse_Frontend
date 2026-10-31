@@ -17,6 +17,18 @@ export default {
         card: '0 1px 2px rgba(21,32,27,0.05)',
         pop: '0 8px 24px rgba(21,32,27,0.14)',
       },
+      keyframes: {
+        'auth-slide': {
+          '0%': { opacity: '0', transform: 'scale(1)' },
+          '5%': { opacity: '0.35' },
+          '25%': { opacity: '0.35' },
+          '30%': { opacity: '0', transform: 'scale(1.12)' },
+          '100%': { opacity: '0', transform: 'scale(1.12)' },
+        },
+      },
+      animation: {
+        'auth-slide': 'auth-slide 24s linear infinite',
+      },
     },
   },
   plugins: [],
