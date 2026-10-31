@@ -13,6 +13,7 @@ const MESSAGES = {
   SKU_TAKEN: 'Another product already uses this code',
   EMAIL_TAKEN: 'An account with this email already exists. Log in instead',
   INVALID_CREDENTIALS: 'Wrong email or password',
+  ACCOUNT_DISABLED: 'This account has been turned off. Please contact the business owner',
   FORBIDDEN: 'Only the owner can do this',
   RATE_LIMITED: 'Too many attempts. Please wait a few minutes',
   INVALID_TOKEN: 'Your session expired',

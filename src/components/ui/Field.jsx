@@ -2,7 +2,7 @@ import { forwardRef, useId, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 
 /** Labelled input with hint and error text, wired for screen readers. Works with react-hook-form's register(). */
-const Field = forwardRef(function Field({ label, error, hint, type = 'text', optional, className = '', ...props }, ref) {
+const Field = forwardRef(function Field({ label, error, hint, type = 'text', optional, required, className = '', ...props }, ref) {
   const id = useId();
   const [show, setShow] = useState(false);
   const isPassword = type === 'password';
@@ -11,7 +11,10 @@ const Field = forwardRef(function Field({ label, error, hint, type = 'text', opt
   return (
     <div className={className}>
       <label htmlFor={id} className="mb-1.5 flex items-baseline justify-between text-sm font-medium text-ink-800">
-        <span>{label}</span>
+        <span>
+          {label}
+          {required && <span aria-hidden="true" className="ml-0.5 font-bold text-red-600">*</span>}
+        </span>
         {optional && <span className="text-xs font-normal text-ink-400">Optional</span>}
       </label>
       <div className="relative">
@@ -20,6 +23,7 @@ const Field = forwardRef(function Field({ label, error, hint, type = 'text', opt
           ref={ref}
           type={isPassword && show ? 'text' : type}
           aria-invalid={error ? 'true' : undefined}
+          aria-required={required ? 'true' : undefined}
           aria-describedby={describedBy}
           className={`block h-11 w-full rounded-md border bg-white px-3 text-base text-ink placeholder:text-ink-400 ${
             error ? 'border-brick' : 'border-ink-300 hover:border-ink-400'
