@@ -19,6 +19,8 @@ const save = (value) => {
 };
 
 let current = loadSaved() ?? { user: demoUser, business: demoBusiness, empty: false };
+let whatsappConnection = null;
+let mockSenders = [];
 let mockSubscription = { plan: 'free', status: 'active', renewalDate: null };
 let mockPaymentStartedAt = 0;
 const tokenFor = (u) => `mock.${u.id}`;
@@ -110,6 +112,30 @@ export const handlers = [
     return HttpResponse.json({ items: items.slice(0, limit), pagination: { page: 1, limit, total: items.length, totalPages: 1 } });
   })),
 
+  http.get(`${base}/whatsapp/status`, guard(() => HttpResponse.json({ connected: Boolean(whatsappConnection), account: whatsappConnection }))),
+  http.post(`${base}/whatsapp/connect`, guard(async ({ request }) => {
+    const { phoneNumberId, wabaId, displayPhoneNumber } = await request.json();
+    whatsappConnection = { phoneNumberId, wabaId: wabaId || null, displayPhoneNumber: displayPhoneNumber || null };
+    return HttpResponse.json({ connected: true, account: whatsappConnection });
+  })),
+  http.get(`${base}/whatsapp/senders`, guard(() => HttpResponse.json({ items: mockSenders }))),
+  http.post(`${base}/whatsapp/senders`, guard(async ({ request }) => {
+    const body = await request.json();
+    const sender = {
+      id: `sender_${Date.now()}_${mockSenders.length}`,
+      phone: body.phone,
+      role: body.role,
+      label: body.label || null,
+      userId: current.user.id,
+      createdAt: new Date().toISOString(),
+    };
+    mockSenders = [...mockSenders, sender];
+    return HttpResponse.json(sender, { status: 201 });
+  })),
+  http.delete(`${base}/whatsapp/senders/:id`, guard(({ params }) => {
+    mockSenders = mockSenders.filter((sender) => sender.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  })),
   http.get(`${base}/payments/subscription`, guard(() => {
     if (mockPaymentStartedAt && Date.now() - mockPaymentStartedAt >= 6000) {
       mockSubscription = { ...mockSubscription, status: 'active', renewalDate: new Date(Date.now() + 30 * 24 * 60 * 60_000).toISOString() };
