@@ -14,6 +14,7 @@ import WhatsAppSettingsPage from './pages/WhatsAppSettingsPage';
 import Billing from './pages/Billing';
 import BillingComplete from './pages/BillingComplete';
 import TeamSettings from './pages/TeamSettings';
+import Messages from './pages/Messages';
 import MorePage from './pages/MorePage';
 import ComingSoonPage from './pages/ComingSoonPage';
 
@@ -43,7 +44,7 @@ export default function App() {
           <Route path="/billing/complete" element={<BillingComplete />} />
           <Route path="/transactions" element={<ComingSoonPage />} />
           <Route path="/expenses" element={<ExpensesPage />} />
-          <Route path="/messages" element={<ComingSoonPage />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/settings" element={<WhatsAppSettingsPage />} />
           <Route path="*" element={<ComingSoonPage />} />
         </Route>

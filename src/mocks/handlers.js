@@ -211,4 +211,17 @@ export const handlers = [
 
   http.get(`${base}/whatsapp/status`, guard(() => HttpResponse.json({ connected: false, account: null }))),
   http.get(`${base}/whatsapp/senders`, guard(() => HttpResponse.json({ items: [] }))),
+  http.get(`${base}/whatsapp/messages`, guard(({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const page = Number(params.get('page')) || 1;
+    const limit = Number(params.get('limit')) || 50;
+    const now = Date.now();
+    const messages = current.empty ? [] : [
+      { id: 'm1', contactName: 'Moses', contactPhone: '256772123456', body: 'Please reserve two bags of rice for me.', sentAt: new Date(now - 12 * 60_000).toISOString(), senderRole: 'customer', aiStatus: 'processed', aiNote: 'Extracted sale' },
+      { id: 'm2', contactName: 'Grace', contactPhone: '0772456789', body: 'Is the cooking oil available today?', sentAt: new Date(now - 38 * 60_000).toISOString(), senderRole: 'customer', aiStatus: 'queued', aiNote: null },
+      { id: 'm3', contactName: 'BizPulse', contactPhone: '256700123456', body: 'Your daily sales summary is ready.', sentAt: new Date(now - 2 * 60 * 60_000).toISOString(), senderRole: 'business', aiStatus: 'ignored', aiNote: null },
+    ];
+    const offset = (page - 1) * limit;
+    return HttpResponse.json({ items: messages.slice(offset, offset + limit), pagination: { page, limit, total: messages.length, totalPages: Math.ceil(messages.length / limit) } });
+  })),
 ];
