@@ -23,9 +23,9 @@ export default function AuthLayout() {
             />
           ))}
         </div>
-        <div className="relative"><Logo tone="light" /></div>
+        <div className="relative"><Logo tone="light" size="lg" /></div>
         <div className="relative max-w-md">
-          <h2 className="text-3xl font-bold leading-tight tracking-tight">Your WhatsApp is already your business. We turn it into your books.</h2>
+          <h2 className="text-2xl font-normal leading-snug">Your WhatsApp is already your business. We turn it into your books.</h2>
         </div>
         <p className="relative text-sm text-ink-400">Built for shops, salons and traders across Uganda.</p>
       </aside>

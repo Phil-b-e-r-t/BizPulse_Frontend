@@ -41,6 +41,7 @@ export default function LoginPage() {
 
         <Field
           label="Email"
+          required
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -52,6 +53,7 @@ export default function LoginPage() {
         />
         <Field
           label="Password"
+          required
           type="password"
           autoComplete="current-password"
           error={errors.password?.message}

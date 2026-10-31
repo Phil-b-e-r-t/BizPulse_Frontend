@@ -48,6 +48,7 @@ export default function RegisterPage() {
 
         <Field
           label="Business name"
+          required
           autoComplete="organization"
           placeholder="Ama Provisions"
           error={errors.businessName?.message}
@@ -55,12 +56,14 @@ export default function RegisterPage() {
         />
         <Field
           label="Your name"
+          required
           autoComplete="name"
           error={errors.ownerName?.message}
           {...register('ownerName', { required: 'Enter your name' })}
         />
         <Field
           label="Email"
+          required
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -82,6 +85,7 @@ export default function RegisterPage() {
         />
         <Field
           label="Password"
+          required
           type="password"
           autoComplete="new-password"
           hint="8 to 72 characters"
