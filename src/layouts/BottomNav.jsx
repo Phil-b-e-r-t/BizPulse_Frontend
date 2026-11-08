@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { NAV_ITEMS, MOBILE_TABS, MORE_ITEM, canSee } from '../config/navigation';
+import { MORE_ITEM, mobileTabsFor, navItemsFor } from '../config/navigation';
 import { useAuth } from '../context/AuthContext';
 
 export default function BottomNav() {
   const { user } = useAuth();
-  const tabs = [...NAV_ITEMS.filter((i) => MOBILE_TABS.includes(i.to) && canSee(i, user?.role)), MORE_ITEM];
+  const tabIds = mobileTabsFor(user?.role);
+  const tabs = [...navItemsFor(user?.role).filter((i) => tabIds.includes(i.to)), MORE_ITEM];
 
   return (
     <nav aria-label="Main (mobile)" className="fixed inset-x-0 bottom-0 z-30 border-t border-ink-200 bg-white pb-[env(safe-area-inset-bottom)] lg:hidden">

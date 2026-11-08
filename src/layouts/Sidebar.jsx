@@ -1,11 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import Logo from '../components/Logo';
-import { NAV_ITEMS, canSee } from '../config/navigation';
+import { navItemsFor } from '../config/navigation';
 import { useAuth } from '../context/AuthContext';
+import { roleLabel } from '../utils/format';
 
 export default function Sidebar() {
   const { user, business } = useAuth();
-  const items = NAV_ITEMS.filter((i) => canSee(i, user?.role));
+  const items = navItemsFor(user?.role);
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col bg-ink lg:flex">
@@ -34,8 +35,8 @@ export default function Sidebar() {
         ))}
       </nav>
       <div className="border-t border-ink-700 px-5 py-4">
-        <p className="truncate text-sm font-semibold text-white">{business?.name}</p>
-        <p className="truncate text-xs capitalize text-ink-400">{user?.name} · {user?.role}</p>
+        <p className="truncate text-sm font-semibold text-white">{business?.name || 'BizPulse administration'}</p>
+        <p className="truncate text-xs capitalize text-ink-400">{user?.name} · {roleLabel(user?.role)}</p>
       </div>
     </aside>
   );
