@@ -9,8 +9,15 @@ import FormAlert from '../components/FormAlert';
 
 const FIELDS = ['email', 'password'];
 
+const SESSION_NOTICES = {
+  SESSION_EXPIRED_INACTIVITY: 'You were signed out after a period of inactivity. Log in again to continue.',
+  SESSION_TERMINATED: 'Your session was ended by an administrator. Log in again to continue.',
+  ACCOUNT_SUSPENDED: 'Your account has been suspended. Please contact BizPulse support.',
+  default: 'Your session expired. Log in again to continue.',
+};
+
 export default function LoginPage() {
-  const { login, sessionExpired, clearExpiredNotice } = useAuth();
+  const { login, sessionExpired, sessionEndReason, clearExpiredNotice } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { register, handleSubmit, setError, clearErrors, watch, formState: { errors, isSubmitting } } = useForm({
@@ -40,7 +47,7 @@ export default function LoginPage() {
       <p className="mt-1.5 text-ink-500">See how your business is doing today.</p>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-8 space-y-5">
-        {sessionExpired && !errors.root?.server && <FormAlert tone="info">Your session expired. Log in again to continue.</FormAlert>}
+        {sessionExpired && !errors.root?.server && <FormAlert tone="info">{SESSION_NOTICES[sessionEndReason] || SESSION_NOTICES.default}</FormAlert>}
         <FormAlert>{errors.root?.server?.message}</FormAlert>
 
         <Field
