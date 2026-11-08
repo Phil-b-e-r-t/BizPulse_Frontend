@@ -1,5 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { env } from '../config/env';
+import { adminHandlers } from './adminHandlers';
+import { ADMIN_LOGIN, adminUser, settings as adminSettings } from './adminData';
 import { DEMO_LOGIN, demoBusiness, demoUser, products, sampleSummary, sampleTransactions } from './sampleData';
 
 // SAMPLE DATA ONLY. Demo login: demo@bizpulse.test / demo12345 (populated business).
@@ -34,6 +36,9 @@ const makeTeamMembers = (user) => [{
 let teamMembers = makeTeamMembers(current.user);
 let teamInvites = [{ id: 'invite_demo', email: 'maria@bizpulse.test', role: 'accountant' }];
 const tokenFor = (u) => `mock.${u.id}`;
+// Mock login protection so the lockout message can be tried: wrong password repeatedly on the demo account.
+const failures = new Map();
+const lockedUntil = new Map();
 
 const authed = (request) => request.headers.get('Authorization') === `Bearer ${tokenFor(current.user)}`;
 const guard = (fn) => (ctx) => (authed(ctx.request) ? fn(ctx) : err(401, 'INVALID_TOKEN', 'Invalid or expired token'));
@@ -44,14 +49,33 @@ const ownerGuard = (fn) => (ctx) => {
 };
 
 export const handlers = [
+  ...adminHandlers,
   http.post(`${base}/auth/login`, async ({ request }) => {
     const { email, password } = await request.json();
+    const until = lockedUntil.get(email);
+    if (until && until > Date.now()) {
+      const mins = Math.ceil((until - Date.now()) / 60000);
+      return err(423, 'ACCOUNT_LOCKED', `Too many failed attempts. This account is locked for ${mins} more minute${mins === 1 ? '' : 's'}.`);
+    }
+    if (email === ADMIN_LOGIN.email && password === ADMIN_LOGIN.password) {
+      current = { user: adminUser, business: null, empty: false };
+      save(current);
+      return HttpResponse.json({ token: tokenFor(adminUser), user: { ...adminUser, sessionTimeoutHours: adminSettings.session.inactivityTimeoutHours }, business: null });
+    }
     if (email === DEMO_LOGIN.email && password === DEMO_LOGIN.password) {
+      failures.delete(email);
       current = { user: demoUser, business: demoBusiness, empty: false };
       teamMembers = makeTeamMembers(demoUser);
       teamInvites = [{ id: 'invite_demo', email: 'maria@bizpulse.test', role: 'accountant' }];
       save(current);
       return HttpResponse.json({ token: tokenFor(demoUser), user: demoUser, business: demoBusiness });
+    }
+    const count = (failures.get(email) || 0) + 1;
+    failures.set(email, count);
+    if ([DEMO_LOGIN.email, ADMIN_LOGIN.email].includes(email) && count >= adminSettings.security.maxFailedLogins) {
+      failures.delete(email);
+      lockedUntil.set(email, Date.now() + adminSettings.security.lockoutMinutes * 60000);
+      return err(423, 'ACCOUNT_LOCKED', `Too many failed attempts. This account is locked for ${adminSettings.security.lockoutMinutes} minutes.`);
     }
     return err(401, 'INVALID_CREDENTIALS', 'Wrong email or password');
   }),
