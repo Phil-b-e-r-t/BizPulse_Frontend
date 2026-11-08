@@ -63,3 +63,10 @@ export const channelLabel = (c) => CHANNEL_LABELS[c] || c;
 
 export const PAYMENT_LABELS = { cash: 'Cash', mobile_money: 'Mobile money', card: 'Card', bank: 'Bank', credit: 'Credit' };
 export const paymentLabel = (p) => PAYMENT_LABELS[p] || p;
+
+export function formatMonth(ym) {
+  // ym is YYYY-MM
+  const [y, m] = String(ym).split('-').map(Number);
+  return new Intl.DateTimeFormat('en-UG', { month: 'short', year: '2-digit', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, 1)));
+}
+export const roleLabel = (role) => (role === 'superadmin' ? 'Super admin' : role);
