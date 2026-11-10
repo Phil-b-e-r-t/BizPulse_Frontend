@@ -1,5 +1,5 @@
 import { env } from '../config/env';
-import { ApiError, SESSION_EXPIRED_CODES } from './errors';
+import { ApiError, SESSION_EXPIRED_CODES, SESSION_END_REASONS } from './errors';
 import { session } from './session';
 
 let onSessionExpired = () => {};
@@ -94,11 +94,14 @@ export async function request(path, options = {}) {
     if (expired && options.auth !== false) {
       // The 15-minute access token ran out: get a new one and repeat the request once.
       // A retried sale keeps its Idempotency-Key, so it cannot be recorded twice.
+      let reason = err.code;
       if (!options._retried) {
-        const refreshed = await refreshSession().then(() => true, () => false);
-        if (refreshed) return request(path, { ...options, _retried: true });
+        const refreshFailure = await refreshSession().then(() => null, (e) => e || new Error('refresh failed'));
+        if (!refreshFailure) return request(path, { ...options, _retried: true });
+        // The refresh call says why it failed (inactive, ended by an admin, suspended).
+        if (SESSION_END_REASONS.includes(refreshFailure.code)) reason = refreshFailure.code;
       }
-      onSessionExpired();
+      onSessionExpired(reason);
     }
     throw err;
   }

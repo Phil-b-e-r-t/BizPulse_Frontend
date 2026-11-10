@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
+import { roleLabel } from '../utils/format';
 
 export default function UserMenu() {
   const { user, business, logout } = useAuth();
@@ -31,14 +32,14 @@ export default function UserMenu() {
         <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand text-xs font-bold text-white">{initials}</span>
         <span className="hidden text-left sm:block">
           <span className="block text-sm font-semibold leading-tight">{user?.name}</span>
-          <span className="block text-xs capitalize leading-tight text-ink-500">{user?.role}</span>
+          <span className="block text-xs capitalize leading-tight text-ink-500">{roleLabel(user?.role)}</span>
         </span>
         <ChevronDown className="h-4 w-4 text-ink-500" aria-hidden="true" />
       </button>
       {open && (
         <div role="menu" className="absolute right-0 z-40 mt-2 w-64 rounded-lg border border-ink-200 bg-white p-1 shadow-pop">
           <div className="border-b border-ink-100 px-3 py-2.5">
-            <p className="truncate text-sm font-semibold">{business?.name}</p>
+            <p className="truncate text-sm font-semibold">{business?.name || 'BizPulse administration'}</p>
             <p className="truncate text-xs text-ink-500">{user?.email}</p>
           </div>
           <button

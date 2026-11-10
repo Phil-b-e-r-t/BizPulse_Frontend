@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, LogOut } from 'lucide-react';
-import { NAV_ITEMS, MOBILE_TABS, canSee } from '../config/navigation';
+import { mobileTabsFor, navItemsFor } from '../config/navigation';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/ui/Toast';
 
@@ -8,12 +8,13 @@ import { useToast } from '../components/ui/Toast';
 export default function MorePage() {
   const { user, business, logout } = useAuth();
   const { push } = useToast();
-  const items = NAV_ITEMS.filter((i) => !MOBILE_TABS.includes(i.to) && canSee(i, user?.role));
+  const tabIds = mobileTabsFor(user?.role);
+  const items = navItemsFor(user?.role).filter((i) => !tabIds.includes(i.to));
 
   return (
     <div className="mx-auto max-w-xl space-y-4">
       <div className="card p-4">
-        <p className="font-semibold">{business?.name}</p>
+        <p className="font-semibold">{business?.name || 'BizPulse administration'}</p>
         <p className="text-sm text-ink-500">{user?.name} · {user?.email}</p>
       </div>
       <ul className="card divide-y divide-ink-100">
