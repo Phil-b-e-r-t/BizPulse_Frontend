@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { CheckCircle2, CreditCard } from 'lucide-react';
 import { getSubscription, initializePayment } from '../api/payments';
 import { friendlyError } from '../api/errors';
@@ -22,7 +22,6 @@ function displayDate(value) {
 }
 
 export default function Billing() {
-  const queryClient = useQueryClient();
   const { push } = useToast();
   const subscriptionQuery = useQuery({
     queryKey: ['payments', 'subscription'],
